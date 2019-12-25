@@ -60,20 +60,21 @@ export default class AddressService {
     AddressCreatedSubject.getSubject().next(addrs)
   }
 
+  // 'true' means generated and 'false' means not
   public static checkAndGenerateSave(
     walletId: string,
     extendedKey: AccountExtendedPublicKey,
     isImporting: boolean | undefined,
     receivingAddressCount: number = 20,
     changeAddressCount: number = 10
-  ) {
+  ): boolean {
     const addressVersion = AddressService.getAddressVersion()
     const [unusedReceivingCount, unusedChangeCount] = AddressDao.unusedAddressesCount(walletId, addressVersion)
     if (
       unusedReceivingCount > this.minUnusedAddressCount &&
       unusedChangeCount > this.minUnusedAddressCount
     ) {
-      return undefined
+      return false
     }
     const maxIndexReceivingAddress = AddressDao.maxAddressIndex(walletId, AddressType.Receiving, addressVersion)
     const maxIndexChangeAddress = AddressDao.maxAddressIndex(walletId, AddressType.Change, addressVersion)
@@ -82,7 +83,7 @@ export default class AddressService {
 
     const receivingCount: number = unusedReceivingCount > this.minUnusedAddressCount ? 0 : receivingAddressCount
     const changeCount: number = unusedChangeCount > this.minUnusedAddressCount ? 0 : changeAddressCount
-    return AddressService.generateAndSave(
+    AddressService.generateAndSave(
       walletId,
       extendedKey,
       isImporting,
@@ -91,6 +92,7 @@ export default class AddressService {
       receivingCount,
       changeCount
     )
+    return true
   }
 
   public static updateTxCountAndBalances = async (

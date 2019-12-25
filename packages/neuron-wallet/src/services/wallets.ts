@@ -307,16 +307,19 @@ export default class WalletService {
   }
 
   // TODO: move this method and generateTx/sendTx out of this file
-  public static async updateUsedAddresses(addresses: string[], url: string) {
+  public static async updateUsedAddresses(addresses: string[], url: string): Promise<boolean> {
     const addrs = await AddressService.updateTxCountAndBalances(addresses, url)
     const walletIds: string[] = addrs
       .map(addr => (addr as Address).walletId)
       .filter((value, idx, a) => a.indexOf(value) === idx)
-    for (const id of walletIds) {
+
+    const results: boolean[] = walletIds.map(id => {
       const wallet = WalletService.getInstance().get(id)
       const accountExtendedPublicKey: AccountExtendedPublicKey = wallet.accountExtendedPublicKey()
       // set isImporting to undefined means unknown
-      AddressService.checkAndGenerateSave(id, accountExtendedPublicKey, undefined, 20, 10)
-    }
+      return AddressService.checkAndGenerateSave(id, accountExtendedPublicKey, undefined, 20, 10)
+    })
+
+    return results.some(r => r === true)
   }
 }

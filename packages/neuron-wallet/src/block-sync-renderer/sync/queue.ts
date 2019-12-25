@@ -12,6 +12,7 @@ import CheckTx from './check-and-save/tx'
 import TypeConvert from 'types/type-convert'
 import CommonUtils from 'utils/common'
 import WalletService from 'services/wallets'
+import AddressService from 'services/addresses'
 
 export default class Queue {
   private lockHashes: string[]
@@ -187,7 +188,11 @@ export default class Queue {
             }
           }
           await TransactionPersistor.saveFetchTx(tx)
-          await WalletService.updateUsedAddresses(addresses, this.url)
+          const generated: boolean = await WalletService.updateUsedAddresses(addresses, this.url)
+          if (generated) {
+            // TODO: should update BlockListener's lockHashes too
+            this.lockHashes = await AddressService.allLockHashes(this.url)
+          }
         }
       }
     }
